@@ -1,6 +1,7 @@
 package pl.lukasz.prostySewer;
 
 
+import io.vavr.collection.List;
 import org.springframework.http.MediaType;
 import org.springframework.http.server.reactive.HttpHandler;
 import org.springframework.http.server.reactive.ReactorHttpHandlerAdapter;
@@ -10,9 +11,7 @@ import reactor.ipc.netty.http.server.HttpServer;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+
 import static org.springframework.web.reactive.function.BodyInserters.fromObject;
 import static org.springframework.web.reactive.function.server.RequestPredicates.GET;
 import static org.springframework.web.reactive.function.server.RequestPredicates.POST;
@@ -22,11 +21,10 @@ import static org.springframework.web.reactive.function.server.RequestPredicates
 
 
 public class ProstySewerApplication {
-    private final List<Message> messages = Collections.synchronizedList( new ArrayList<>()); // lista będzie synchronizowana
-
+    private List<Message> messages = List.empty(); // lista niemutowalna z vavr.io
     private ProstySewerApplication(){
-        messages.add(new Message("witaj ","Zenon"));
-        messages.add(new Message("sprawdzamy Zenka ","Marian"));
+        messages=messages.append(new Message("witaj ","Zenon"));//dodanie do listy niemutowalnej!!!
+        messages=messages.append(new Message("sprawdzamy Zenka ","Marian"));
     }
 
     public static void main(String[] args) {
@@ -50,10 +48,11 @@ public class ProstySewerApplication {
         return request -> {
             Mono<Message> postedMessage = request.bodyToMono(Message.class);
             return  postedMessage.flatMap(message -> {
-                messages.add(message);
+                messages=messages.append(message);//dodanie
                 return ServerResponse.ok()
                         .contentType(MediaType.APPLICATION_JSON)
-                        .body(fromObject(messages));
+                        .body(fromObject(messages.toJavaList()));//wyślietlenie z listy potrzeba to JavaList bo inaczej serwer
+                                                                //sobie nie radzi
             });
         };
     }
@@ -62,7 +61,7 @@ public class ProstySewerApplication {
         return request -> {
             return ServerResponse.ok()
                     .contentType(MediaType.APPLICATION_JSON)
-                    .body(fromObject(messages));
+                    .body(fromObject(messages.toJavaList()));
         };
     }
 
