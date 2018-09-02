@@ -11,6 +11,7 @@ import reactor.ipc.netty.http.server.HttpServer;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import static org.springframework.web.reactive.function.BodyInserters.fromObject;
 import static org.springframework.web.reactive.function.server.RequestPredicates.GET;
@@ -21,7 +22,7 @@ import static org.springframework.web.reactive.function.server.RequestPredicates
 
 
 public class ProstySewerApplication {
-    private final List<Message> messages = new ArrayList<>();
+    private final List<Message> messages = Collections.synchronizedList( new ArrayList<>()); // lista będzie synchronizowana
 
     private ProstySewerApplication(){
         messages.add(new Message("witaj ","Zenon"));
