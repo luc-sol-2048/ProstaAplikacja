@@ -36,7 +36,7 @@ public class ProstySewerApplication {
 
         RouterFunction route = nest(path("/api"),
                 route(GET("/time"), getTime())
-                .andRoute(GET("/messages"),getMessages())
+                .andRoute(GET("/messages"), renderMessages())
                 .andRoute(POST("/messages"),postMessage()));
         HttpHandler httpHandler = RouterFunctions.toHttpHandler(route);
         HttpServer server = HttpServer.create("localhost", 8080);
@@ -58,11 +58,11 @@ public class ProstySewerApplication {
     }
 
 
-    private HandlerFunction<ServerResponse> getMessages() {
+    private HandlerFunction<ServerResponse> renderMessages() {
         return request -> {
             return ServerResponse.ok()
                     .contentType(MediaType.APPLICATION_JSON)
-                    .body(fromObject(messages.toJavaList()));
+                    .body(fromObject(getMessages().toJavaList()));
         };
     }
 
@@ -81,5 +81,8 @@ public class ProstySewerApplication {
         messages=messages.append(message); // synchronizowanie dodawania wiadomości
     }
 
+    private synchronized List<Message> getMessages(){
+        return messages;
+    }
 }
 
