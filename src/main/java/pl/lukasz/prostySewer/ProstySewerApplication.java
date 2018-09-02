@@ -23,8 +23,8 @@ import static org.springframework.web.reactive.function.server.RequestPredicates
 public class ProstySewerApplication {
     private List<Message> messages = List.empty(); // lista niemutowalna z vavr.io
     private ProstySewerApplication(){
-        messages=messages.append(new Message("witaj ","Zenon"));//dodanie do listy niemutowalnej!!!
-        messages=messages.append(new Message("sprawdzamy Zenka ","Marian"));
+        addMessage(new Message("witaj ","Zenon"));
+        addMessage(new Message("sprawdzamy Zenka ","Marian"));
     }
 
     public static void main(String[] args) {
@@ -48,7 +48,7 @@ public class ProstySewerApplication {
         return request -> {
             Mono<Message> postedMessage = request.bodyToMono(Message.class);
             return  postedMessage.flatMap(message -> {
-                messages=messages.append(message);//dodanie
+                addMessage(message);
                 return ServerResponse.ok()
                         .contentType(MediaType.APPLICATION_JSON)
                         .body(fromObject(messages.toJavaList()));//wyślietlenie z listy potrzeba to JavaList bo inaczej serwer
@@ -56,6 +56,7 @@ public class ProstySewerApplication {
             });
         };
     }
+
 
     private HandlerFunction<ServerResponse> getMessages() {
         return request -> {
@@ -75,4 +76,10 @@ public class ProstySewerApplication {
                     .body(fromObject(myFormatter.format(now)));
         };
     }
+
+    private synchronized void addMessage(Message message) {
+        messages=messages.append(message); // synchronizowanie dodawania wiadomości
+    }
+
 }
+
