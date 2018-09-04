@@ -2,6 +2,7 @@ package pl.lukasz.prostySewer;
 
 
 import io.vavr.collection.List;
+import io.vavr.control.Option;
 import org.springframework.http.MediaType;
 import org.springframework.http.server.reactive.HttpHandler;
 import org.springframework.http.server.reactive.ReactorHttpHandlerAdapter;
@@ -21,11 +22,7 @@ import static org.springframework.web.reactive.function.server.RequestPredicates
 
 
 public class ProstySewerApplication {
-    private List<Message> messages = List.empty(); // lista niemutowalna z vavr.io
-    private ProstySewerApplication(){
-        addMessage(new Message("witaj ","Zenon"));
-        addMessage(new Message("sprawdzamy Zenka ","Marian"));
-    }
+    private Service service = new Service();
 
     public static void main(String[] args) {
         new ProstySewerApplication().serve();
@@ -36,8 +33,8 @@ public class ProstySewerApplication {
 
         RouterFunction route = nest(path("/api"),
                 route(GET("/time"), getTime())
-                .andRoute(GET("/messages"), renderMessages())
-                .andRoute(POST("/messages"),postMessage()));
+                .andRoute(GET("/messages/{topic}"), renderMessages()) // użytkowink musi wprowadzić topic aby pobrać wiadomości
+                .andRoute(POST("/messages/{topic}"),postMessage()));//  użytkowink musi wprowadzić topic aby dodać wiadomość
         HttpHandler httpHandler = RouterFunctions.toHttpHandler(route);
         HttpServer server = HttpServer.create("localhost", 8080);
         server.startAndAwait(new ReactorHttpHandlerAdapter(httpHandler));
@@ -45,14 +42,14 @@ public class ProstySewerApplication {
     }
 
     private HandlerFunction<ServerResponse> postMessage() {
+
         return request -> {
+
             Mono<Message> postedMessage = request.bodyToMono(Message.class);
             return  postedMessage.flatMap(message -> {
-                addMessage(message);
-                return ServerResponse.ok()
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body(fromObject(messages.toJavaList()));//wyślietlenie z listy potrzeba to JavaList bo inaczej serwer
-                                                                //sobie nie radzi
+                final String topicName=request.pathVariable("topic");
+               final Option<Topic> topicOption = service.addMessageToTopic(topicName, message);
+                return messageOrErrorFromTopic(topicOption);
             });
         };
     }
@@ -60,10 +57,18 @@ public class ProstySewerApplication {
 
     private HandlerFunction<ServerResponse> renderMessages() {
         return request -> {
-            return ServerResponse.ok()
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(fromObject(getMessages().toJavaList()));
+           final String topicName = request.pathVariable("topic"); // pobranie nazwy topicu od uzytkownika
+            Option<Topic> topicOpion = service.getTopics(topicName); // sprawdzenie czy mamy topic w naszej mapie
+             return messageOrErrorFromTopic(topicOpion);
         };
+    }
+
+
+    private Mono<ServerResponse> messageOrErrorFromTopic(Option<Topic> topicOpion) {
+        return topicOpion.map(topic -> ServerResponse.ok() // jeżeli mamy to zwracamy listę wiadomości dla topicu
+                   .contentType(MediaType.APPLICATION_JSON)
+                   .body(fromObject(topic.messages.toJavaList())) )
+                   .getOrElse(()->ServerResponse.notFound().build());// jeżeli nie mamy to zwracamy błąd 404
     }
 
     private HandlerFunction<ServerResponse> getTime() {
@@ -77,12 +82,5 @@ public class ProstySewerApplication {
         };
     }
 
-    private synchronized void addMessage(Message message) {
-        messages=messages.append(message); // synchronizowanie dodawania wiadomości
-    }
-
-    private synchronized List<Message> getMessages(){
-        return messages;
-    }
 }
 
