@@ -6,14 +6,13 @@ import io.vavr.control.Option;
 
 public class Service {
 
+    public static final String MESAGES_JSONS = "mesages.jsons";
     private Map<String, Topic> topicMap;
-    private BoarMessageWriter writer = new BoarMessageWriter("mesages.jsons"); // inicjalizowanie pliku;
+    private BoarMessageWriter writer = new BoarMessageWriter(MESAGES_JSONS); // inicjalizowanie pliku;
 
 
     Service(){
-        this.topicMap=List.of("java", "vavr.io","spring")//lista z nazwami topiców
-            .map(name->Topic.create(name))//tworzenie topic
-            .toMap(topic -> topic.topicName,topic -> topic);//dopisywanie do mapy nazyw Topicu i samego Topicu!!!
+        this.topicMap=new BoardMessageReader().readAllTopics(MESAGES_JSONS);
     }
 
    synchronized Option<Topic> getTopics(String topicName){
