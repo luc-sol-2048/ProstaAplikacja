@@ -1,7 +1,6 @@
 package pl.lukasz.prostySewer;
 
 
-import io.vavr.collection.List;
 import io.vavr.control.Option;
 import org.springframework.http.MediaType;
 import org.springframework.http.server.reactive.HttpHandler;
