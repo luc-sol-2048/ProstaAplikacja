@@ -38,6 +38,7 @@ public class BoardMessageReader {
                        } catch (IOException e) {
                            nextMessage = Try.failure(e); //gdy coś nie jest ok zwrócenie błędu
                        }
+
                        return nextMessage.isSuccess();//jezeli udało się wyciągnąć wiadomość to iteruj dalej
                    }
 

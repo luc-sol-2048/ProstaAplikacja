@@ -23,6 +23,7 @@ import static org.springframework.web.reactive.function.server.RequestPredicates
 public class ProstySewerApplication {
     private Service service = new Service();
 
+
     public static void main(String[] args) {
         new ProstySewerApplication().serve();
 
